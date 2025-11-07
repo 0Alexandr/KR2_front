@@ -1,6 +1,6 @@
 // Основной скрипт для всего сайта
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Инициализация всех компонентов
     initNavigation();
     initScrollEffects();
@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function initNavigation() {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     const navLinks = document.querySelectorAll('.nav-link');
-    
+
     navLinks.forEach(link => {
         const linkPage = link.getAttribute('href').split('/').pop();
-        if (linkPage === currentPage || 
+        if (linkPage === currentPage ||
             (currentPage === '' && linkPage === 'index.html') ||
             (currentPage === undefined && linkPage === 'index.html')) {
             link.classList.add('active');
@@ -28,22 +28,29 @@ function initNavigation() {
 // Эффекты прокрутки
 function initScrollEffects() {
     const scrollElements = document.querySelectorAll('.skill-item, .project-card');
-    
+
+    // Сначала добавляем класс скрытого состояния (через CSS)
+    scrollElements.forEach(el => {
+        el.classList.add('animate-hidden');
+    });
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
+                entry.target.classList.remove('animate-hidden');
+                entry.target.classList.add('animate-visible');
+            }
+            // опционально: убрать видимый класс если ушло из view
+            else {
+                //entry.target.classList.remove('animate-visible');
+                //entry.target.classList.add('animate-hidden');
             }
         });
     }, {
         threshold: 0.1
     });
-    
+
     scrollElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(el);
     });
 }
@@ -53,7 +60,7 @@ function initDynamicContent() {
     // Обновление года в футере
     const yearElements = document.querySelectorAll('footer p');
     const currentYear = new Date().getFullYear();
-    
+
     yearElements.forEach(element => {
         if (element.textContent.includes('2025')) {
             element.textContent = element.textContent.replace('2025', currentYear);
@@ -64,18 +71,18 @@ function initDynamicContent() {
 // Переключение темы
 function initThemeToggle() {
     const themeToggle = document.getElementById('themeToggle');
-    
+
     if (themeToggle) {
         // Восстанавливаем тему из localStorage или устанавливаем светлую по умолчанию
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-bs-theme', savedTheme);
         updateThemeButton(savedTheme, themeToggle);
-        
+
         // Обработчик клика
-        themeToggle.addEventListener('click', function() {
+        themeToggle.addEventListener('click', function () {
             const currentTheme = document.documentElement.getAttribute('data-bs-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            
+
             document.documentElement.setAttribute('data-bs-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             updateThemeButton(newTheme, themeToggle);

@@ -1,139 +1,82 @@
-// Валидация форм
+// === Валидация формы с поддержкой доступности ===
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("contactForm");
 
-document.addEventListener('DOMContentLoaded', function() {
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        initContactForm();
-    }
-});
+    if (!form) return;
 
-function initContactForm() {
-    const form = document.getElementById('contactForm');
-    
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (validateForm()) {
-            submitForm();
-        }
-    });
-    
-    // Валидация в реальном времени
-    const inputs = form.querySelectorAll('input, textarea');
-    inputs.forEach(input => {
-        input.addEventListener('blur', function() {
-            validateField(this);
-        });
-        
-        input.addEventListener('input', function() {
-            if (this.classList.contains('is-invalid')) {
-                validateField(this);
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        let isValid = true;
+
+        // Проверяем все поля формы
+        const fields = form.querySelectorAll("input[required], textarea[required]");
+
+        fields.forEach((field) => {
+            const errorElement = document.getElementById(`${field.id}Error`);
+
+            // Убираем предыдущие ошибки
+            field.classList.remove("is-invalid");
+            field.removeAttribute("aria-invalid");
+
+            // Проверка на пустое значение
+            if (!field.value.trim()) {
+                field.classList.add("is-invalid");
+                field.setAttribute("aria-invalid", "true");
+
+                if (errorElement) {
+                    errorElement.style.display = "block";
+                }
+
+                isValid = false;
+                return;
+            }
+
+            // Проверка email
+            if (field.type === "email" && !validateEmail(field.value)) {
+                field.classList.add("is-invalid");
+                field.setAttribute("aria-invalid", "true");
+
+                if (errorElement) {
+                    errorElement.textContent = "Пожалуйста, введите корректный email.";
+                    errorElement.style.display = "block";
+                }
+
+                isValid = false;
+                return;
+            }
+
+            // Если ошибок нет
+            if (errorElement) {
+                errorElement.style.display = "none";
             }
         });
-    });
-}
 
-function validateForm() {
-    const form = document.getElementById('contactForm');
-    const inputs = form.querySelectorAll('input, textarea');
-    let isValid = true;
-    
-    inputs.forEach(input => {
-        if (!validateField(input)) {
-            isValid = false;
+        if (isValid) {
+            showSuccessMessage(form);
+            form.reset();
         }
     });
-    
-    return isValid;
+});
+
+// === Проверка email по регулярному выражению ===
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
 }
 
-function validateField(field) {
-    let isValid = true;
-    let errorMessage = '';
-    
-    // Очищаем предыдущие состояния
-    field.classList.remove('is-invalid', 'is-valid');
-    
-    // Проверка обязательных полей
-    if (field.hasAttribute('required') && !field.value.trim()) {
-        isValid = false;
-        errorMessage = 'Это поле обязательно для заполнения';
-    }
-    
-    // Проверка email
-    if (field.type === 'email' && field.value.trim()) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(field.value)) {
-            isValid = false;
-            errorMessage = 'Пожалуйста, введите корректный email';
-        }
-    }
-    
-    // Проверка минимальной длины для сообщения
-    if (field.id === 'message' && field.value.trim().length < 10) {
-        isValid = false;
-        errorMessage = 'Сообщение должно содержать минимум 10 символов';
-    }
-    
-    // Обновляем состояние поля
-    if (isValid) {
-        field.classList.add('is-valid');
-    } else {
-        field.classList.add('is-invalid');
-        // Обновляем сообщение об ошибке
-        const feedback = field.nextElementSibling;
-        if (feedback && feedback.classList.contains('invalid-feedback')) {
-            feedback.textContent = errorMessage;
-        }
-    }
-    
-    return isValid;
-}
+// === Показ уведомления об успешной отправке ===
+function showSuccessMessage(form) {
+    const alert = document.createElement("div");
+    alert.className = "alert alert-success mt-3";
+    alert.setAttribute("role", "alert");
+    alert.textContent = "Сообщение успешно отправлено! Спасибо за обращение.";
 
-function submitForm() {
-    const form = document.getElementById('contactForm');
-    const formData = new FormData(form);
-    
-    // Здесь обычно отправка данных на сервер
-    // Для демонстрации просто показываем сообщение об успехе
-    
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    
-    submitButton.textContent = 'Отправка...';
-    submitButton.disabled = true;
-    
-    // Имитация отправки
-    setTimeout(() => {
-        showAlert('Сообщение успешно отправлено!', 'success');
-        form.reset();
-        
-        // Сбрасываем классы валидации
-        const inputs = form.querySelectorAll('input, textarea');
-        inputs.forEach(input => {
-            input.classList.remove('is-valid');
-        });
-        
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-    }, 2000);
-}
+    // Удаляем старое сообщение, если было
+    const oldAlert = form.querySelector(".alert-success");
+    if (oldAlert) oldAlert.remove();
 
-function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    const form = document.getElementById('contactForm');
-    form.parentNode.insertBefore(alertDiv, form);
-    
-    // Автоматическое скрытие через 5 секунд
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
+    form.appendChild(alert);
+
+    // Убираем сообщение через 5 секунд
+    setTimeout(() => alert.remove(), 5000);
 }
